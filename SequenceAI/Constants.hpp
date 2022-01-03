@@ -16,10 +16,21 @@ namespace constants {
 	const int CARD_OFFSET_X = 8;
 	const int CARD_OFFSET_Y = 8;
 
+	const int HAND_OFFSET_X = 787;
+	const int HAND_OFFSET_Y = 40;
+	const int HAND_SPACING = 10;
+
+	const int TOKEN_SIZE = 300;
+	const float TOKEN_SCALE_FACTOR = 0.33f;
+
 	// Gameplay
 	const int DECK_SIZE = 52 * 2;
 	const int HAND_SIZE = 7;
+	const int NUM_PLAYERS = 2;
+	const int P1 = 0;
+	const int P2 = 1;
 
+	// Cards
 	const int NUM_SUITS = 4;
 	const int NUM_FACES = 13;
 

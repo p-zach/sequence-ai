@@ -7,12 +7,13 @@ Card::Card(int suit, int face) : suit(suit), face(face)
 {
 }
 
-IntRect Card::getCardBoundsOnBoard()
+IntRect Card::getCardTextureBounds()
 {
-	return getCardBoundsOnBoard(suit, face);
+	return getCardTextureBounds(suit, face);
 }
 
-IntRect Card::getCardBoundsOnBoard(int suit, int face)
+// Gets the card's bounds on the texture sheet.
+IntRect Card::getCardTextureBounds(int suit, int face)
 {
 	return IntRect(face * constants::CARD_WIDTH, suit * constants::CARD_HEIGHT, constants::CARD_WIDTH, constants::CARD_HEIGHT);
 }

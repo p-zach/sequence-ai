@@ -13,7 +13,7 @@ public:
 
 	Card();
 	Card(int, int);
-	IntRect getCardBoundsOnBoard();
+	IntRect getCardTextureBounds();
 
-	static IntRect getCardBoundsOnBoard(int suit, int face);
+	static IntRect getCardTextureBounds(int suit, int face);
 };
