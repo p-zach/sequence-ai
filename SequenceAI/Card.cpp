@@ -17,3 +17,8 @@ IntRect Card::getCardTextureBounds(int suit, int face)
 {
 	return IntRect(face * constants::CARD_WIDTH, suit * constants::CARD_HEIGHT, constants::CARD_WIDTH, constants::CARD_HEIGHT);
 }
+
+bool Card::operator==(const Card &other) const
+{
+	return this->suit == other.suit && this->face == other.face;
+}

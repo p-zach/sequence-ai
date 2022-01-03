@@ -12,8 +12,10 @@ public:
 	int face;
 
 	Card();
-	Card(int, int);
+	Card(int suit, int face);
 	IntRect getCardTextureBounds();
 
 	static IntRect getCardTextureBounds(int suit, int face);
+
+	bool operator==(const Card&) const;
 };

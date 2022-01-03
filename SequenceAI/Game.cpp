@@ -29,8 +29,8 @@ void Game::loadContent()
 {
     loadTexture(cardSheet, "cards.png");
     loadTexture(cardBack, "card_back.jpg");
-    loadTexture(tokens[constants::P1], "token_blue.png");
-    loadTexture(tokens[constants::P2], "token_red.png");
+    loadTexture(tokenTextures[constants::P1], "token_blue.png");
+    loadTexture(tokenTextures[constants::P2], "token_red.png");
 
     background = RectangleShape(Vector2f(constants::SCREEN_WIDTH, constants::SCREEN_HEIGHT));
     background.setFillColor(Color(0, 115, 0));
@@ -49,6 +49,8 @@ void Game::reset()
 {
     state = GameState::TURN_P1;
 
+    deck.clear();
+
     // Initialize deck
     for (int i = 0; i < constants::DECK_SIZE; i++)
     {
@@ -61,10 +63,16 @@ void Game::reset()
     {
         for (int i = 0; i < constants::HAND_SIZE; i++)
         {
-            hands[p][i] = deck.back();
-            deck.pop_back();
+            hands[p][i] = drawCard();
         }
     }
+}
+
+Card Game::drawCard()
+{
+    Card card = deck.back();
+    deck.pop_back();
+    return card;
 }
 
 IntRect Game::getHandRect(int player, int index)
@@ -103,6 +111,8 @@ vector<int> Game::getBoardIndices(int suit, int face)
 
 void Game::update(RenderWindow& window)
 {
+    //printf("Turn: %d\n", (int)state);
+
     highlightedCard = -1;
 
     for (int p = constants::P1; p <= constants::P2; p++)
@@ -116,6 +126,45 @@ void Game::update(RenderWindow& window)
             }
         }
     }
+
+    if (Mouse::isButtonPressed(Mouse::Button::Left))
+    {
+        for (int y = 0; y < constants::GAME_BOARD_SIZE; y++)
+        {
+            for (int x = 0; x < constants::GAME_BOARD_SIZE; x++)
+            {
+                if (getCardRect(x, y).contains(Mouse::getPosition(window)))
+                {
+                    clickCard(x, y);
+                }
+            }
+        }
+    }
+}
+
+void Game::clickCard(int x, int y)
+{
+    int index = y * 10 + x;
+
+    // Exit if there is already a token on the clicked card
+    if (tokenPositions[constants::P1].find(index) != end(tokenPositions[constants::P1]) ||
+        tokenPositions[constants::P2].find(index) != end(tokenPositions[constants::P2]))
+        return;
+
+    int cardID = constants::GAME_BOARD[y][x];
+    int suit = cardID / constants::NUM_FACES;
+    int face = cardID % constants::NUM_FACES;
+
+    // If the clicked card is in the current player's hand
+    Card* cardInHand = find(begin(hands[(int)state]), end(hands[(int)state]), Card(suit, face));
+    if (cardInHand != end(hands[(int)state]))
+    {
+        tokenPositions[(int)state].insert(index);
+
+        *cardInHand = drawCard();
+
+        state = (Game::GameState)(1 - (int)state);
+    }
 }
 
 void Game::draw(RenderWindow& window)
@@ -127,9 +176,19 @@ void Game::draw(RenderWindow& window)
     drawHands(window);
 }
 
+Vector2f Game::getCardPosition(int x, int y)
+{
+    return Vector2f((float)x * (constants::CARD_WIDTH + constants::CARD_GAP), (float)y * (constants::CARD_HEIGHT + constants::CARD_GAP)) * constants::DRAWN_CARD_SCALE_FACTOR
+        + Vector2f(constants::CARD_OFFSET_X, constants::CARD_OFFSET_Y);
+}
+
+IntRect Game::getCardRect(int x, int y)
+{
+    return IntRect((Vector2i)getCardPosition(x, y), Vector2i(Vector2f(constants::CARD_WIDTH, constants::CARD_HEIGHT) * constants::DRAWN_CARD_SCALE_FACTOR));
+}
+
 void Game::drawBoard(RenderWindow& window)
 {
-    Vector2f offset(constants::CARD_OFFSET_X, constants::CARD_OFFSET_Y);
     for (int y = 0; y < constants::GAME_BOARD_SIZE; y++)
     {
         for (int x = 0; x < constants::GAME_BOARD_SIZE; x++)
@@ -144,12 +203,11 @@ void Game::drawBoard(RenderWindow& window)
                 // Set it to the proper sprite
                 card = Sprite(cards[suit][face]);
             else
-                // Otherwise, set it to the wildcard sprite (just a card back)
+                // Otherwise, set it to the wildcard sprite (just the back of a card)
                 card.setTexture(cardBack);
             card.setScale(constants::DRAWN_CARD_SCALE_FACTOR, constants::DRAWN_CARD_SCALE_FACTOR);
 
-            Vector2f position((float)x * (constants::CARD_WIDTH + constants::CARD_GAP), (float)y * (constants::CARD_HEIGHT + constants::CARD_GAP));
-            card.setPosition(position * constants::DRAWN_CARD_SCALE_FACTOR + offset);
+            card.setPosition(getCardPosition(x, y));
 
             if (cardID == highlightedCard)
             {
@@ -157,6 +215,14 @@ void Game::drawBoard(RenderWindow& window)
             }
 
             window.draw(card);
+        }
+    }
+
+    for (int p = constants::P1; p <= constants::P2; p++)
+    {
+        for (auto position : tokenPositions[p])
+        {
+            drawToken(window, p, position);
         }
     }
 }
@@ -177,4 +243,17 @@ void Game::drawHands(RenderWindow& window)
         }
         offset = Vector2f(constants::HAND_OFFSET_X, constants::HAND_OFFSET_Y);
     }
+}
+
+void Game::drawToken(RenderWindow& window, int player, int index)
+{
+    int y = index / constants::GAME_BOARD_SIZE;
+    int x = index % constants::GAME_BOARD_SIZE;
+
+    Sprite token(tokenTextures[player]);
+    token.setOrigin(constants::TOKEN_SIZE / 2, constants::TOKEN_SIZE / 2);
+    token.setPosition(getCardPosition(x, y) + Vector2f(constants::CARD_WIDTH, constants::CARD_HEIGHT) * 0.5f * constants::DRAWN_CARD_SCALE_FACTOR);
+    token.setScale(constants::TOKEN_SCALE_FACTOR, constants::TOKEN_SCALE_FACTOR);
+
+    window.draw(token);
 }

@@ -4,6 +4,7 @@
 #include "Card.hpp"
 #include "Constants.hpp"
 
+#include <set>
 #include <vector>
 
 using namespace sf;
@@ -26,19 +27,26 @@ private:
 
 	Texture cardSheet;
 	Texture cardBack;
-	Texture tokens[constants::NUM_PLAYERS];
+	Texture tokenTextures[constants::NUM_PLAYERS];
 	Sprite cards[constants::NUM_SUITS][constants::NUM_FACES];
 	RectangleShape background;
 
 	int highlightedCard;
+	set<int> tokenPositions[constants::NUM_PLAYERS];
+
+	void clickCard(int x, int y);
 
 	void loadTexture(Texture&, string);
 	void loadContent();
 	void reset();
+	Card drawCard();
 
+	Vector2f getCardPosition(int x, int y);
+	IntRect getCardRect(int x, int y);
 	IntRect getHandRect(int player, int index);
 	vector<int> getBoardIndices(int suit, int face);
 
 	void drawBoard(RenderWindow&);
+	void drawToken(RenderWindow&, int player, int index);
 	void drawHands(RenderWindow&);
 };

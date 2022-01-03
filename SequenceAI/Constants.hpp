@@ -21,7 +21,7 @@ namespace constants {
 	const int HAND_SPACING = 10;
 
 	const int TOKEN_SIZE = 300;
-	const float TOKEN_SCALE_FACTOR = 0.33f;
+	const float TOKEN_SCALE_FACTOR = 0.22f;
 
 	// Gameplay
 	const int DECK_SIZE = 52 * 2;
