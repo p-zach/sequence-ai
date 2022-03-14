@@ -13,10 +13,10 @@ using namespace std;
 class Game
 {
 public:
-	enum class GameState { TURN_P1, TURN_P2, WON };
+	enum class GameState { TURN_P1, TURN_P2, ANIMATING, WON };
 
 	Game();
-	void update(RenderWindow&);
+	void update(RenderWindow&, float);
 	void draw(RenderWindow&);
 
 private:
@@ -30,9 +30,12 @@ private:
 	Texture tokenTextures[constants::NUM_PLAYERS];
 	Sprite cards[constants::NUM_SUITS][constants::NUM_FACES];
 	RectangleShape background;
+	Font font;
 
 	int highlightedCard;
 	set<int> tokenPositions[constants::NUM_PLAYERS];
+
+	Sprite topDiscard;
 
 	void clickCard(int x, int y);
 
@@ -45,8 +48,27 @@ private:
 	IntRect getCardRect(int x, int y);
 	IntRect getHandRect(int player, int index);
 	vector<int> getBoardIndices(int suit, int face);
+	void highlightSelectedCard(RenderWindow&);
+	void checkForCardClick(RenderWindow&);
 
 	void drawBoard(RenderWindow&);
 	void drawToken(RenderWindow&, int player, int index);
 	void drawHands(RenderWindow&);
+	void drawInformation(RenderWindow&);
+
+	void startDiscardAnimation(int player, int index);
+	void startDrawCardAnimation(int player, int index);
+	void startTokenPlaceAnimation(int player, int x, int y);
+
+	void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip = false);
+	void updateAnimation(float);
+	float easeInOutCubic(float);
+
+	Sprite animated;
+	Vector2f animationOrigin;
+	Vector2f animationPosition;
+	Vector2f animationDestination;
+	bool flip;
+	float animationTime;
+	GameState stateAfterAnimation;
 };

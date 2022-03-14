@@ -5,7 +5,10 @@ Card::Card() : Card(0, 0) { }
 
 Card::Card(int suit, int face) : suit(suit), face(face)
 {
+	
 }
+
+const Card Card::invalid = Card(-1, -1);
 
 IntRect Card::getCardTextureBounds()
 {

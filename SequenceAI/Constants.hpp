@@ -23,6 +23,25 @@ namespace constants {
 	const int TOKEN_SIZE = 300;
 	const float TOKEN_SCALE_FACTOR = 0.22f;
 
+	const int TIP_TEXT_SIZE = 24;
+	const int TIP_1_OFFSET_X = 920;
+	const int TIP_2_OFFSET_X = 910;
+	const int TIP_OFFSET_Y = 200;
+	const int TIP_COLOR = 60;
+
+	const int TURN_TEXT_SIZE = 32;
+	const int TURN_OFFSET_X = 990;
+	const int TURN_EXTRA_OFFSET_X = 25;
+	const int TURN_OFFSET_Y = 600;
+
+	const int STACK_OFFSET_X = 950;
+	const int STACK_OFFSET_Y = 400;
+	const int STACK_SPACING = 100;
+
+	const int BACKGROUND_COLOR = 115;
+
+	const float ANIMATION_TIME = 0.7f;
+
 	// Gameplay
 	const int DECK_SIZE = 52 * 2;
 	const int HAND_SIZE = 7;

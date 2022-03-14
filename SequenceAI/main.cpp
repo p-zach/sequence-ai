@@ -16,6 +16,8 @@ int main()
 
     Game game;
 
+    Clock clock;
+
     // Main loop
     while (window.isOpen())
     {
@@ -30,7 +32,8 @@ int main()
         // Clear previous frame
         window.clear();
 
-        game.update(window);
+        float elapsed = clock.restart().asSeconds();
+        game.update(window, elapsed);
         game.draw(window);
 
         // Push drawn pixels to screen

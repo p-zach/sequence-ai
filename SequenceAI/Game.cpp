@@ -31,9 +31,14 @@ void Game::loadContent()
     loadTexture(cardBack, "card_back.jpg");
     loadTexture(tokenTextures[constants::P1], "token_blue.png");
     loadTexture(tokenTextures[constants::P2], "token_red.png");
+    if (!font.loadFromFile("NotoSans-Black.ttf"))
+    {
+        cout << "Error loading font file. Aborting." << endl;
+        exit(EXIT_FAILURE);
+    }
 
     background = RectangleShape(Vector2f(constants::SCREEN_WIDTH, constants::SCREEN_HEIGHT));
-    background.setFillColor(Color(0, 115, 0));
+    background.setFillColor(Color(0, constants::BACKGROUND_COLOR, 0));
 
     for (int suit = 0; suit < constants::NUM_SUITS; suit++)
     {
@@ -66,6 +71,8 @@ void Game::reset()
             hands[p][i] = drawCard();
         }
     }
+
+    topDiscard = Sprite();
 }
 
 Card Game::drawCard()
@@ -109,10 +116,27 @@ vector<int> Game::getBoardIndices(int suit, int face)
     return indices;
 }
 
-void Game::update(RenderWindow& window)
+void Game::update(RenderWindow& window, float elapsed)
 {
-    //printf("Turn: %d\n", (int)state);
+    if (state == GameState::TURN_P1 || state == GameState::TURN_P2)
+    {
+        highlightSelectedCard(window);
 
+        checkForCardClick(window);
+    }
+    else if (state == GameState::ANIMATING)
+    {
+        updateAnimation(elapsed);
+
+        //if (animated )/*
+        //{
+
+        //}*/
+    }    
+}
+
+void Game::highlightSelectedCard(RenderWindow& window)
+{
     highlightedCard = -1;
 
     for (int p = constants::P1; p <= constants::P2; p++)
@@ -126,7 +150,10 @@ void Game::update(RenderWindow& window)
             }
         }
     }
+}
 
+void Game::checkForCardClick(RenderWindow& window)
+{
     if (Mouse::isButtonPressed(Mouse::Button::Left))
     {
         for (int y = 0; y < constants::GAME_BOARD_SIZE; y++)
@@ -140,6 +167,37 @@ void Game::update(RenderWindow& window)
             }
         }
     }
+}
+
+void Game::startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip)
+{
+    this->animated = animated;
+    animationOrigin = origin;
+    animationDestination = destination;
+    this->flip = flip;
+
+    state = GameState::ANIMATING;
+    stateAfterAnimation = stateAfter;
+}
+
+void Game::updateAnimation(float elapsed)
+{
+    animationTime += elapsed;
+
+    if (animationTime >= constants::ANIMATION_TIME)
+    {
+        state = stateAfterAnimation;
+        return;
+    }
+
+    Vector2f diff = animationDestination - animationOrigin;
+    Vector2f delta = diff * easeInOutCubic(animationTime / constants::ANIMATION_TIME);
+    animationPosition = animationOrigin + delta;
+}
+
+float Game::easeInOutCubic(float x)
+{
+    return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
 }
 
 void Game::clickCard(int x, int y)
@@ -164,6 +222,8 @@ void Game::clickCard(int x, int y)
         *cardInHand = drawCard();
 
         state = (Game::GameState)(1 - (int)state);
+
+        topDiscard = Sprite(cards[suit][face]);
     }
 }
 
@@ -174,6 +234,8 @@ void Game::draw(RenderWindow& window)
     drawBoard(window);
 
     drawHands(window);
+
+    drawInformation(window);
 }
 
 Vector2f Game::getCardPosition(int x, int y)
@@ -225,6 +287,18 @@ void Game::drawBoard(RenderWindow& window)
             drawToken(window, p, position);
         }
     }
+
+    Sprite topDraw(cardBack);
+
+    Vector2f position(constants::STACK_OFFSET_X, constants::STACK_OFFSET_Y);
+
+    topDraw.setPosition(position);
+
+    window.draw(topDraw);
+
+    topDiscard.setPosition(position + Vector2f(constants::CARD_WIDTH + constants::STACK_SPACING, 0));
+
+    window.draw(topDiscard);
 }
 
 void Game::drawHands(RenderWindow& window)
@@ -234,6 +308,8 @@ void Game::drawHands(RenderWindow& window)
     {
         for (int i = 0; i < constants::HAND_SIZE; i++)
         {
+            if (hands[p][i] == Card::invalid)
+                continue;
             Card card = hands[p][i];
             Sprite cardSprite = cards[card.suit][card.face];
             Vector2f position((float)i * (constants::CARD_WIDTH + constants::HAND_SPACING), 0);
@@ -256,4 +332,35 @@ void Game::drawToken(RenderWindow& window, int player, int index)
     token.setScale(constants::TOKEN_SCALE_FACTOR, constants::TOKEN_SCALE_FACTOR);
 
     window.draw(token);
+}
+
+void Game::drawInformation(RenderWindow& window)
+{
+    Text tip1, tip2;
+    tip1.setFont(font);
+    tip2.setFont(font);
+
+    tip1.setString("ONE EYED JACKS REMOVE");
+    tip2.setString("TWO EYED JACKS ARE WILD");
+
+    tip1.setFillColor(Color(0, constants::TIP_COLOR, 0));
+    tip2.setFillColor(Color(0, constants::TIP_COLOR, 0));
+
+    tip1.setCharacterSize(constants::TIP_TEXT_SIZE);
+    tip2.setCharacterSize(constants::TIP_TEXT_SIZE);
+
+    tip1.setPosition(constants::TIP_1_OFFSET_X, constants::TIP_OFFSET_Y);
+    tip2.setPosition(constants::TIP_2_OFFSET_X, constants::SCREEN_HEIGHT - (constants::TIP_OFFSET_Y + constants::TIP_TEXT_SIZE));
+
+    window.draw(tip1);
+    window.draw(tip2);
+
+    Text turn;
+    turn.setFont(font);
+    turn.setString(state == GameState::TURN_P1 ? "Your Turn" : "AI Turn");
+    turn.setFillColor(Color::Black);
+    turn.setCharacterSize(constants::TURN_TEXT_SIZE);
+    turn.setPosition(constants::TURN_OFFSET_X + (state == GameState::TURN_P2 ? constants::TURN_EXTRA_OFFSET_X : 0), constants::TURN_OFFSET_Y);
+
+    window.draw(turn);
 }

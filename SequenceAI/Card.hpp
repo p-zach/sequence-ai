@@ -11,6 +11,7 @@ public:
 	int suit;
 	int face;
 
+
 	Card();
 	Card(int suit, int face);
 	IntRect getCardTextureBounds();
@@ -18,4 +19,6 @@ public:
 	static IntRect getCardTextureBounds(int suit, int face);
 
 	bool operator==(const Card&) const;
+
+	static const Card invalid;
 };
