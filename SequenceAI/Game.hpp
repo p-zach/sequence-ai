@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML\Graphics.hpp>
+#include <functional>
 #include "Card.hpp"
 #include "Constants.hpp"
 
@@ -34,7 +35,6 @@ private:
 
 	int highlightedCard;
 	set<int> tokenPositions[constants::NUM_PLAYERS];
-
 	Sprite topDiscard;
 
 	void clickCard(int x, int y);
@@ -55,14 +55,18 @@ private:
 	void drawToken(RenderWindow&, int player, int index);
 	void drawHands(RenderWindow&);
 	void drawInformation(RenderWindow&);
+	void drawAnimation(RenderWindow&);
 
-	void startDiscardAnimation(int player, int index);
-	void startDrawCardAnimation(int player, int index);
-	void startTokenPlaceAnimation(int player, int x, int y);
+	void startDiscardAnimation(int player, int handIndex, int x, int y);
+	void startTokenPlaceAnimation(int player, int x, int y, int handIndex);
+	void startDrawCardAnimation(int player, int handIndex);
 
-	void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip = false);
+	void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip = false, function<void()> callAfter = nullptr);
 	void updateAnimation(float);
 	float easeInOutCubic(float);
+
+	Vector2i getDrawPosition();
+	Vector2i getDiscardPosition();
 
 	Sprite animated;
 	Vector2f animationOrigin;
@@ -71,4 +75,5 @@ private:
 	bool flip;
 	float animationTime;
 	GameState stateAfterAnimation;
+	function<void()> functionToCall;
 };

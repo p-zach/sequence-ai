@@ -22,6 +22,9 @@ namespace constants {
 
 	const int TOKEN_SIZE = 300;
 	const float TOKEN_SCALE_FACTOR = 0.22f;
+	const int TOKEN_ANIM_START_X = 500;
+	const int TOKEN_ANIM_START_Y_P2 = -100;
+	const int TOKEN_ANIM_START_Y_P1 = SCREEN_HEIGHT + 100;
 
 	const int TIP_TEXT_SIZE = 24;
 	const int TIP_1_OFFSET_X = 920;
