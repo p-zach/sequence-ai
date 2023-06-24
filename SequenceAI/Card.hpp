@@ -11,7 +11,6 @@ public:
 	int suit;
 	int face;
 
-
 	Card();
 	Card(int suit, int face);
 	IntRect getCardTextureBounds();

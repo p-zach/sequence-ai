@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-#include "Game.hpp"
+#include "GameController.hpp"
 #include "Card.hpp"
 #include "Constants.hpp"
 
@@ -14,7 +14,7 @@ int main()
     // Initialize window
     RenderWindow window(VideoMode(constants::SCREEN_WIDTH, constants::SCREEN_HEIGHT), "Sequence");
 
-    Game game;
+    GameController game;
 
     Clock clock;
 

@@ -30,8 +30,7 @@ namespace constants {
 	const int TIP_COLOR = 60;
 
 	const int TURN_TEXT_SIZE = 32;
-	const int TURN_OFFSET_X = 990;
-	const int TURN_EXTRA_OFFSET_X = 25;
+	const int TURN_OFFSET_X = 1075;
 	const int TURN_OFFSET_Y = 600;
 
 	const int STACK_OFFSET_X = 950;
@@ -50,6 +49,7 @@ namespace constants {
 	const int P2 = 1;
 
 	// Cards
+	const int INVALID_CARD = -1;
 	const int NUM_SUITS = 4;
 	const int NUM_FACES = 13;
 

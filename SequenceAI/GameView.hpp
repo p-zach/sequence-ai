@@ -3,6 +3,7 @@
 #include <SFML\Graphics.hpp>
 #include "Card.hpp"
 #include "Constants.hpp"
+#include "SequenceModel.hpp"
 
 #include <set>
 #include <vector>
@@ -10,20 +11,19 @@
 using namespace sf;
 using namespace std;
 
-class Game
+// Forward declaration to prevent circular dependency
+class GameController;
+
+class GameView
 {
 public:
-	enum class GameState { TURN_P1, TURN_P2, ANIMATING, WON };
+	GameView(GameController&);
 
-	Game();
 	void update(RenderWindow&, float);
 	void draw(RenderWindow&);
 
 private:
-	GameState state;
-
-	vector<Card> deck;
-	Card hands[constants::NUM_PLAYERS][constants::HAND_SIZE];
+	GameController& controller;
 
 	Texture cardSheet;
 	Texture cardBack;
@@ -33,20 +33,19 @@ private:
 	Font font;
 
 	int highlightedCard;
-	set<int> tokenPositions[constants::NUM_PLAYERS];
 
 	Sprite topDiscard;
+	void reset();
 
 	void clickCard(int x, int y);
 
 	void loadTexture(Texture&, string);
 	void loadContent();
-	void reset();
-	Card drawCard();
 
 	Vector2f getCardPosition(int x, int y);
 	IntRect getCardRect(int x, int y);
 	IntRect getHandRect(int player, int index);
+
 	vector<int> getBoardIndices(int suit, int face);
 	void highlightSelectedCard(RenderWindow&);
 	void checkForCardClick(RenderWindow&);
@@ -60,9 +59,9 @@ private:
 	void startDrawCardAnimation(int player, int index);
 	void startTokenPlaceAnimation(int player, int x, int y);
 
-	void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip = false);
+	/*void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip = false);
 	void updateAnimation(float);
-	float easeInOutCubic(float);
+	float easeInOutCubic(float);*/
 
 	Sprite animated;
 	Vector2f animationOrigin;
@@ -70,5 +69,5 @@ private:
 	Vector2f animationDestination;
 	bool flip;
 	float animationTime;
-	GameState stateAfterAnimation;
 };
+
