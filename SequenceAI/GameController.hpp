@@ -19,11 +19,13 @@ public:
 	void update(RenderWindow&, float);
 	void draw(RenderWindow&);
 
-	int clickCard(int x, int y);
+	int clickCard(int x, int y, Card* usedCard);
 
-	string getTurnText() const;
+	int getPlayerIndex() const;
 	Card getHandCard(int player, int index) const;
-	set<int> getTokenPositions(int player) const;
+	vector<int> getTokenPositions(int player) const;
+
+	bool needDoubleUpdate() const;
 
 private:
 	GameView view;

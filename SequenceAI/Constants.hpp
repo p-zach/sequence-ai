@@ -5,10 +5,12 @@ namespace constants {
 	const int SCREEN_WIDTH = 1400;
 	const int SCREEN_HEIGHT = 990;
 
-	const int CARD_IMAGE_WIDTH = 950;
-	const int CARD_IMAGE_HEIGHT = 392;
-	const int CARD_WIDTH = CARD_IMAGE_WIDTH / 13;
-	const int CARD_HEIGHT = CARD_IMAGE_HEIGHT / 4;
+	const int FRAMERATE = 120;
+
+	const int CARD_SHEET_WIDTH = 950;
+	const int CARD_SHEET_HEIGHT = 392;
+	const int CARD_WIDTH = CARD_SHEET_WIDTH / 13;
+	const int CARD_HEIGHT = CARD_SHEET_HEIGHT / 4;
 
 	const float DRAWN_CARD_SCALE_FACTOR = 0.95f;
 
@@ -21,7 +23,10 @@ namespace constants {
 	const int HAND_SPACING = 10;
 
 	const int TOKEN_SIZE = 300;
-	const float TOKEN_SCALE_FACTOR = 0.22f;
+	const float TOKEN_SCALE_FACTOR = 0.22f; 
+	const int TOKEN_ANIM_START_X = 500;
+	const int TOKEN_ANIM_START_Y_P2 = -100;
+	const int TOKEN_ANIM_START_Y_P1 = SCREEN_HEIGHT + 100;
 
 	const int TIP_TEXT_SIZE = 24;
 	const int TIP_1_OFFSET_X = 920;
@@ -39,7 +44,12 @@ namespace constants {
 
 	const int BACKGROUND_COLOR = 115;
 
-	const float ANIMATION_TIME = 0.7f;
+	const float ANIMATION_TIME = 0.7f; 
+	
+	const int HIGHLIGHT_ALL = -1;
+	const int HIGHLIGHT_TOKENED_P1 = -2;
+	const int HIGHLIGHT_TOKENED_P2 = -3;
+	const int HIGHLIGHT_NONE = -4;
 
 	// Gameplay
 	const int DECK_SIZE = 52 * 2;

@@ -7,6 +7,7 @@
 
 #include <set>
 #include <vector>
+#include <functional>
 
 using namespace sf;
 using namespace std;
@@ -21,6 +22,13 @@ public:
 
 	void update(RenderWindow&, float);
 	void draw(RenderWindow&);
+
+	bool isAnimating() const;
+	void updateAnimation(float);
+
+	bool needDoubleUpdate() const;
+
+	~GameView();
 
 private:
 	GameController& controller;
@@ -54,20 +62,30 @@ private:
 	void drawToken(RenderWindow&, int player, int index);
 	void drawHands(RenderWindow&);
 	void drawInformation(RenderWindow&);
+	void drawAnimation(RenderWindow&);
 
-	void startDiscardAnimation(int player, int index);
+	void startDiscardAnimation(int player, int index, int x, int y);
 	void startDrawCardAnimation(int player, int index);
-	void startTokenPlaceAnimation(int player, int x, int y);
+	void startTokenPlaceAnimation(int player, int x, int y, int handIndex, bool remove);
 
-	/*void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip = false);
-	void updateAnimation(float);
-	float easeInOutCubic(float);*/
+	void startAnimation(Sprite animated, Vector2f origin, Vector2f destination, bool flip = false, function<void()> callAfter = nullptr);
+	float easeInOutCubic(float);
 
+	Vector2i getDrawPosition();
+	Vector2i getDiscardPosition();
+
+	bool currentlyAnimating;
 	Sprite animated;
 	Vector2f animationOrigin;
 	Vector2f animationPosition;
 	Vector2f animationDestination;
 	bool flip;
+	bool drawLastToken;
+	int tempTokenPos;
+	Card* usedCard;
+	int discardPlayer, discardIndex;
+	bool drawNewlyDrawnCard;
 	float animationTime;
+	function<void()> functionAfterAnimation;
 };
 

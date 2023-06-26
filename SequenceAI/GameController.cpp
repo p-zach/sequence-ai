@@ -14,22 +14,10 @@ GameController::GameController() : view(*this)
 
 void GameController::update(RenderWindow& window, float elapsed)
 {
-    view.update(window, elapsed);
-    //if (state == GameState::TURN_P1 || state == GameState::TURN_P2)
-    //{
-    //    highlightSelectedCard(window);
-
-    //    checkForCardClick(window);
-    //}
-    //else if (state == GameState::ANIMATING)
-    //{
-    //    updateAnimation(elapsed);
-
-    //    //if (animated )/*
-    //    //{
-
-    //    //}*/
-    //}    
+    if (!view.isAnimating())
+        view.update(window, elapsed);
+    else
+        view.updateAnimation(elapsed);
 }
 
 void GameController::draw(RenderWindow& window)
@@ -37,14 +25,14 @@ void GameController::draw(RenderWindow& window)
     view.draw(window);
 }
 
-int GameController::clickCard(int x, int y)
+int GameController::clickCard(int x, int y, Card* usedCard)
 {
-    return model.clickCard(x, y);
+    return model.clickCard(x, y, usedCard);
 }
 
-string GameController::getTurnText() const
+int GameController::getPlayerIndex() const
 {
-    return model.getTurnText();
+    return model.getPlayerIndex();
 }
 
 Card GameController::getHandCard(int player, int index) const
@@ -52,7 +40,12 @@ Card GameController::getHandCard(int player, int index) const
     return model.getHandCard(player, index);
 }
 
-set<int> GameController::getTokenPositions(int player) const
+vector<int> GameController::getTokenPositions(int player) const
 {
     return model.getTokenPositions(player);
+}
+
+bool GameController::needDoubleUpdate() const
+{
+    return view.needDoubleUpdate();
 }

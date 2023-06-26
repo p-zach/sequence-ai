@@ -13,6 +13,7 @@ int main()
 {
     // Initialize window
     RenderWindow window(VideoMode(constants::SCREEN_WIDTH, constants::SCREEN_HEIGHT), "Sequence");
+    window.setFramerateLimit(constants::FRAMERATE);
 
     GameController game;
 
@@ -34,6 +35,8 @@ int main()
 
         float elapsed = clock.restart().asSeconds();
         game.update(window, elapsed);
+        if (game.needDoubleUpdate())
+            game.update(window, FLT_EPSILON);
         game.draw(window);
 
         // Push drawn pixels to screen

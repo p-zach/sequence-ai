@@ -17,11 +17,11 @@ public:
 
 	SequenceModel();
 
-	int clickCard(int x, int y);
+	int clickCard(int x, int y, Card* usedCard);
 
-	string getTurnText() const;
+	int getPlayerIndex() const;
 	Card getHandCard(int player, int index) const;
-	set<int> getTokenPositions(int player) const;
+	vector<int> getTokenPositions(int player) const;
 
 private:
 	GameState state;
@@ -29,10 +29,9 @@ private:
 	vector<Card> deck;
 	Card hands[constants::NUM_PLAYERS][constants::HAND_SIZE];
 
-	set<int> tokenPositions[constants::NUM_PLAYERS];
+	vector<int> tokenPositions[constants::NUM_PLAYERS];
 
 	void reset();
 	Card drawCard();
-
 };
 

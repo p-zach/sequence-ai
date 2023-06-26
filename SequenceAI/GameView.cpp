@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <ctime>
 #include <cstdlib>
+#include <functional>
 
 using namespace std;
 using namespace sf;
@@ -11,11 +12,19 @@ using namespace sf;
 GameView::GameView(GameController& controller) : controller(controller)
 {
 	loadContent();
+    reset();
+    usedCard = new Card();
+}
+
+GameView::~GameView()
+{
+    delete(usedCard);
 }
 
 void GameView::reset()
 {
     topDiscard = Sprite();
+    tempTokenPos = -1;
 }
 
 /// <summary>
@@ -59,6 +68,9 @@ void GameView::loadContent()
             cards[suit][face].setTextureRect(Card::getCardTextureBounds(suit, face));
         }
     }
+
+    drawNewlyDrawnCard = true;
+    drawLastToken = true;
 }
 
 void GameView::update(RenderWindow& window, float elapsed)
@@ -66,27 +78,15 @@ void GameView::update(RenderWindow& window, float elapsed)
     highlightSelectedCard(window);
 
     checkForCardClick(window);
-
-    // belongs in something like updateAnimation called by Controller instead of this function when animating
-    //else if (state == GameState::ANIMATING)
-    //{
-    //    updateAnimation(elapsed);
-
-    //    //if (animated )/*
-    //    //{
-
-    //    //}*/
-    //}
 }
 
 void GameView::clickCard(int x, int y)
 {
     // Try to place a token
-    int clicked = controller.clickCard(x, y);
+    int clicked = controller.clickCard(x, y, usedCard);
     if (clicked != constants::INVALID_CARD)
     {
-        // If the token was placed, update the discard pile with the used card
-        topDiscard = Sprite(cards[clicked / constants::NUM_FACES][clicked % constants::NUM_FACES]);
+        startDiscardAnimation(1 - controller.getPlayerIndex(), clicked, x, y);
     }
 }
 
@@ -126,7 +126,7 @@ vector<int> GameView::getBoardIndices(int suit, int face)
 
 void GameView::highlightSelectedCard(RenderWindow& window)
 {
-    highlightedCard = -1;
+    highlightedCard = constants::HIGHLIGHT_NONE;
 
     for (int p = constants::P1; p <= constants::P2; p++)
     {
@@ -135,7 +135,26 @@ void GameView::highlightSelectedCard(RenderWindow& window)
             if (getHandRect(p, i).contains(Mouse::getPosition(window)))
             {
                 Card card = controller.getHandCard(p, i);
-                highlightedCard = card.suit * constants::NUM_FACES + card.face;
+
+                // Regular cards just highlight themselves on the board
+                if (card.face != constants::FACE_JACK)
+                {
+                    highlightedCard = card.suit * constants::NUM_FACES + card.face;
+                }
+                // Jacks have special capabilities
+                else
+                {
+                    // One-eyed jacks can remove tokens
+                    if (card.suit == constants::SUIT_HEART / 13 || card.suit == constants::SUIT_SPADE / 13)
+                    {
+                        highlightedCard = constants::HIGHLIGHT_TOKENED_P1 - p;
+                    }
+                    // Two-eyed jacks are wildcards
+                    else if (card.suit == constants::SUIT_DIAMOND / 13 || card.suit == constants::SUIT_CLUB / 13)
+                    {
+                        highlightedCard = constants::HIGHLIGHT_ALL;
+                    }
+                }
             }
         }
     }
@@ -158,36 +177,156 @@ void GameView::checkForCardClick(RenderWindow& window)
     }
 }
 
-//void GameView::startAnimation(Sprite animated, Vector2f origin, Vector2f destination, GameState stateAfter, bool flip)
-//{
-//    this->animated = animated;
-//    animationOrigin = origin;
-//    animationDestination = destination;
-//    this->flip = flip;
-//
-//    state = GameState::ANIMATING;
-//    stateAfterAnimation = stateAfter;
-//}
-//
-//void GameView::updateAnimation(float elapsed)
-//{
-//    animationTime += elapsed;
-//
-//    if (animationTime >= constants::ANIMATION_TIME)
-//    {
-//        state = stateAfterAnimation;
-//        return;
-//    }
-//
-//    Vector2f diff = animationDestination - animationOrigin;
-//    Vector2f delta = diff * easeInOutCubic(animationTime / constants::ANIMATION_TIME);
-//    animationPosition = animationOrigin + delta;
-//}
-//
-//float GameView::easeInOutCubic(float x)
-//{
-//    return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
-//}
+void GameView::startAnimation(Sprite animated, Vector2f origin, Vector2f destination, bool flip, function<void()> callAfter)
+{
+    currentlyAnimating = true;
+    this->animated = animated;
+    animationOrigin = origin;
+    animationDestination = destination;
+    animationTime = 0.f;
+    this->flip = flip;
+
+    functionAfterAnimation = callAfter;
+}
+
+void GameView::updateAnimation(float elapsed)
+{
+    animationTime += elapsed;
+
+    if (animationTime >= constants::ANIMATION_TIME)
+    {
+        // prevent 1-frame flashing of following animated sprite
+        animationPosition = Vector2f(-1000, -1000);
+
+        currentlyAnimating = false;
+        functionAfterAnimation();
+        return;
+    }
+
+    Vector2f diff = animationDestination - animationOrigin;
+    Vector2f delta = diff * easeInOutCubic(animationTime / constants::ANIMATION_TIME);
+    animationPosition = animationOrigin + delta;
+}
+
+float GameView::easeInOutCubic(float x)
+{
+    return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
+}
+
+void GameView::drawAnimation(RenderWindow& window)
+{
+    if (flip)
+    {
+        Sprite toDraw;
+        float t = easeInOutCubic(animationTime);
+
+        if (animationTime < constants::ANIMATION_TIME / 2)
+        {
+            toDraw = Sprite(cardBack);
+            toDraw.setScale(1 - (2 / constants::ANIMATION_TIME * animationTime), 1);
+        }
+        else
+        {
+            toDraw = Sprite(animated);
+            toDraw.setScale((animationTime - constants::ANIMATION_TIME / 2) / (constants::ANIMATION_TIME / 2), 1);
+        }
+        toDraw.setPosition(animationPosition);
+        window.draw(toDraw);
+    }
+    else
+    {
+        animated.setPosition(animationPosition);
+        window.draw(animated);
+    }
+
+}
+
+Vector2i GameView::getDrawPosition()
+{
+    return Vector2i(constants::STACK_OFFSET_X, constants::STACK_OFFSET_Y);
+}
+
+Vector2i GameView::getDiscardPosition()
+{
+    return Vector2i(constants::STACK_OFFSET_X + constants::CARD_WIDTH + constants::STACK_SPACING, constants::STACK_OFFSET_Y);
+}
+
+void GameView::startDiscardAnimation(int player, int handIndex, int x, int y)
+{
+    IntRect handRect = getHandRect(player, handIndex);
+
+    Card card = *usedCard;
+    Sprite cardSprite = Sprite(cards[card.suit][card.face]);
+
+    bool removingToken = false;
+    if (card.face == constants::FACE_JACK && (card.suit == constants::SUIT_HEART / 13 || card.suit == constants::SUIT_SPADE / 13))
+        removingToken = true;
+
+    function<void()> afterDiscard = [this, cardSprite, player, x, y, handIndex, removingToken]() {
+        topDiscard = Sprite(cardSprite);
+        tempTokenPos = -1;
+        startTokenPlaceAnimation(player, x, y, handIndex, removingToken);
+    };
+
+    startAnimation(cardSprite, Vector2f(handRect.left, handRect.top),
+        (Vector2f)getDiscardPosition(), false,
+        afterDiscard);
+
+    discardPlayer = player;
+    discardIndex = handIndex;
+    
+    drawLastToken = removingToken;
+    drawNewlyDrawnCard = false;
+
+    if (removingToken)
+        tempTokenPos = y * 10 + x;
+}
+
+void GameView::startTokenPlaceAnimation(int player, int x, int y, int handIndex, bool remove)
+{
+    int index = y * 10 + x;
+
+    Sprite tokenSprite(tokenTextures[remove ? 1 - player : player]);
+    tokenSprite.setOrigin(constants::TOKEN_SIZE / 2, constants::TOKEN_SIZE / 2);
+    tokenSprite.setScale(constants::TOKEN_SCALE_FACTOR, constants::TOKEN_SCALE_FACTOR);
+
+    Vector2f origin(constants::TOKEN_ANIM_START_X, player ? constants::TOKEN_ANIM_START_Y_P2 : constants::TOKEN_ANIM_START_Y_P1);
+    Vector2f dest = getCardPosition(x, y) + Vector2f(constants::CARD_WIDTH, constants::CARD_HEIGHT) * 0.5f * constants::DRAWN_CARD_SCALE_FACTOR;
+    function<void()> afterTokenPlace;
+
+    if (!remove)
+    {
+        afterTokenPlace = [this, index, player, handIndex]() {
+            //tokenPositions[player].insert(index);
+            startDrawCardAnimation(player, handIndex);
+            drawLastToken = true;
+        };
+    }
+    else
+    {
+        origin = dest;
+        dest = Vector2f(constants::TOKEN_ANIM_START_X, player ? constants::TOKEN_ANIM_START_Y_P1 : constants::TOKEN_ANIM_START_Y_P2);
+        //tokenPositions[1 - player].erase(index);
+        afterTokenPlace = [this, player, handIndex]() {
+            startDrawCardAnimation(player, handIndex);
+            drawLastToken = true;
+        };
+    }
+
+    startAnimation(tokenSprite, origin, dest, false, afterTokenPlace);
+}
+
+void GameView::startDrawCardAnimation(int player, int index)
+{
+    IntRect handRect = getHandRect(player, index);
+    Card newCard = controller.getHandCard(discardPlayer, discardIndex);
+
+    function<void()> afterDrawCard = [this, player, index, newCard]() {
+        drawNewlyDrawnCard = true;
+    };
+
+    startAnimation(cards[newCard.suit][newCard.face], (Vector2f)getDrawPosition(), Vector2f(handRect.left, handRect.top), true, afterDrawCard);
+}
 
 void GameView::draw(RenderWindow& window)
 {
@@ -198,6 +337,8 @@ void GameView::draw(RenderWindow& window)
     drawHands(window);
 
     drawInformation(window);
+
+    drawAnimation(window);
 }
 
 Vector2f GameView::getCardPosition(int x, int y)
@@ -227,14 +368,28 @@ void GameView::drawBoard(RenderWindow& window)
                 // Set it to the proper sprite
                 card = Sprite(cards[suit][face]);
             else
-                // Otherwise, set it to the wildcard sprite (just the back of a card)
+                // Otherwise, set it to the wildcard sprite (the back of a card)
                 card.setTexture(cardBack);
             card.setScale(constants::DRAWN_CARD_SCALE_FACTOR, constants::DRAWN_CARD_SCALE_FACTOR);
 
             card.setPosition(getCardPosition(x, y));
 
-            if (cardID == highlightedCard)
+            // Check whether this card has a token on it
+            auto tokensP1 = controller.getTokenPositions(constants::P1);
+            auto tokensP2 = controller.getTokenPositions(constants::P2);
+            bool tokenedP1 = find(begin(tokensP1), end(tokensP1), y * 10 + x) != end(tokensP1);
+            bool tokenedP2 = find(begin(tokensP2), end(tokensP2), y * 10 + x) != end(tokensP2);
+            bool tokened = tokenedP1 || tokenedP2;
+
+            // If the card specifically is selected, a wildcard jack is selected, or it's tokened and a remove jack is selected,
+            if (cardID != constants::WILD && (
+                (cardID == highlightedCard && !tokened)
+                || (!tokened && highlightedCard == constants::HIGHLIGHT_ALL)
+                || (tokenedP1 && highlightedCard == constants::HIGHLIGHT_TOKENED_P2)
+                || (tokenedP2 && highlightedCard == constants::HIGHLIGHT_TOKENED_P1))
+                )
             {
+                // Highlight the card
                 card.setColor(Color::Yellow);
             }
 
@@ -244,21 +399,22 @@ void GameView::drawBoard(RenderWindow& window)
 
     for (int p = constants::P1; p <= constants::P2; p++)
     {
-        for (auto position : controller.getTokenPositions(p))
+        auto tokens = controller.getTokenPositions(p);
+        for (int t = 0; t < (drawLastToken || p != discardPlayer ? tokens.size() : tokens.size() - 1); t++)
         {
-            drawToken(window, p, position);
+            drawToken(window, p, tokens[t]);
         }
     }
+    if (tempTokenPos != -1)
+        drawToken(window, controller.getPlayerIndex(), tempTokenPos);
 
     Sprite topDraw(cardBack);
 
-    Vector2f position(constants::STACK_OFFSET_X, constants::STACK_OFFSET_Y);
-
-    topDraw.setPosition(position);
+    topDraw.setPosition((Vector2f)getDrawPosition());
 
     window.draw(topDraw);
 
-    topDiscard.setPosition(position + Vector2f(constants::CARD_WIDTH + constants::STACK_SPACING, 0));
+    topDiscard.setPosition((Vector2f)getDiscardPosition());
 
     window.draw(topDiscard);
 }
@@ -270,12 +426,15 @@ void GameView::drawHands(RenderWindow& window)
     {
         for (int i = 0; i < constants::HAND_SIZE; i++)
         {
+            if (!drawNewlyDrawnCard && p == discardPlayer && i == discardIndex)
+                continue;
             Card card = controller.getHandCard(p, i);
             if (card == Card::invalid)
                 continue;
             Sprite cardSprite = cards[card.suit][card.face];
-            Vector2f position((float)i * (constants::CARD_WIDTH + constants::HAND_SPACING), 0);
-            cardSprite.setPosition(position + offset);
+            IntRect handRect = getHandRect(p, i);
+            Vector2f position = Vector2f(handRect.left, handRect.top);
+            cardSprite.setPosition(position);
 
             window.draw(cardSprite);
         }
@@ -317,10 +476,23 @@ void GameView::drawInformation(RenderWindow& window)
     window.draw(tip1);
     window.draw(tip2);
 
-    Text turn{ controller.getTurnText(), font };
-    turn.setFillColor(Color::Black);
-    turn.setCharacterSize(constants::TURN_TEXT_SIZE);
-    turn.setPosition(constants::TURN_OFFSET_X - turn.getGlobalBounds().width / 2.f, constants::TURN_OFFSET_Y);
+    if (!currentlyAnimating)
+    {
+        Text turn{ controller.getPlayerIndex() == 0 ? "Your Turn" : "AI Turn", font };
+        turn.setFillColor(Color::Black);
+        turn.setCharacterSize(constants::TURN_TEXT_SIZE);
+        turn.setPosition(constants::TURN_OFFSET_X - turn.getGlobalBounds().width / 2.f, constants::TURN_OFFSET_Y);
 
-    window.draw(turn);
+        window.draw(turn);
+    }
+}
+
+bool GameView::isAnimating() const
+{
+    return currentlyAnimating;
+}
+
+bool GameView::needDoubleUpdate() const
+{
+    return animationTime <= 0.f;
 }
