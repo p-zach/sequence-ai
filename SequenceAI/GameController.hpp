@@ -20,10 +20,13 @@ public:
 	void draw(RenderWindow&);
 
 	int clickCard(int x, int y, Card* usedCard);
+	bool checkWin(int player, int placedX, int placedY);
+	int gameIsWon() const;
 
 	int getPlayerIndex() const;
 	Card getHandCard(int player, int index) const;
 	vector<int> getTokenPositions(int player) const;
+	bool inFirstSequence(int player, int x, int y) const;
 
 	bool needDoubleUpdate() const;
 

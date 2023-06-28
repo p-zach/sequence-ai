@@ -88,6 +88,7 @@ void GameView::clickCard(int x, int y)
     {
         startDiscardAnimation(1 - controller.getPlayerIndex(), clicked, x, y);
     }
+    controller.checkWin(1 - controller.getPlayerIndex(), x, y);
 }
 
 IntRect GameView::getHandRect(int player, int index)
@@ -128,6 +129,10 @@ void GameView::highlightSelectedCard(RenderWindow& window)
 {
     highlightedCard = constants::HIGHLIGHT_NONE;
 
+    // Don't highlight if the game is over
+    if (controller.gameIsWon() != -1)
+        return;
+
     for (int p = constants::P1; p <= constants::P2; p++)
     {
         for (int i = 0; i < constants::HAND_SIZE; i++)
@@ -162,6 +167,10 @@ void GameView::highlightSelectedCard(RenderWindow& window)
 
 void GameView::checkForCardClick(RenderWindow& window)
 {
+    // Don't highlight if the game is over
+    if (controller.gameIsWon() != -1)
+        return;
+
     if (Mouse::isButtonPressed(Mouse::Button::Left))
     {
         for (int y = 0; y < constants::GAME_BOARD_SIZE; y++)
@@ -279,12 +288,12 @@ void GameView::startDiscardAnimation(int player, int handIndex, int x, int y)
     drawNewlyDrawnCard = false;
 
     if (removingToken)
-        tempTokenPos = y * 10 + x;
+        tempTokenPos = y * constants::GAME_BOARD_SIZE + x;
 }
 
 void GameView::startTokenPlaceAnimation(int player, int x, int y, int handIndex, bool remove)
 {
-    int index = y * 10 + x;
+    int index = y * constants::GAME_BOARD_SIZE + x;
 
     Sprite tokenSprite(tokenTextures[remove ? 1 - player : player]);
     tokenSprite.setOrigin(constants::TOKEN_SIZE / 2, constants::TOKEN_SIZE / 2);
@@ -377,16 +386,16 @@ void GameView::drawBoard(RenderWindow& window)
             // Check whether this card has a token on it
             auto tokensP1 = controller.getTokenPositions(constants::P1);
             auto tokensP2 = controller.getTokenPositions(constants::P2);
-            bool tokenedP1 = find(begin(tokensP1), end(tokensP1), y * 10 + x) != end(tokensP1);
-            bool tokenedP2 = find(begin(tokensP2), end(tokensP2), y * 10 + x) != end(tokensP2);
+            bool tokenedP1 = find(begin(tokensP1), end(tokensP1), y * constants::GAME_BOARD_SIZE + x) != end(tokensP1);
+            bool tokenedP2 = find(begin(tokensP2), end(tokensP2), y * constants::GAME_BOARD_SIZE + x) != end(tokensP2);
             bool tokened = tokenedP1 || tokenedP2;
 
             // If the card specifically is selected, a wildcard jack is selected, or it's tokened and a remove jack is selected,
             if (cardID != constants::WILD && (
                 (cardID == highlightedCard && !tokened)
                 || (!tokened && highlightedCard == constants::HIGHLIGHT_ALL)
-                || (tokenedP1 && highlightedCard == constants::HIGHLIGHT_TOKENED_P2)
-                || (tokenedP2 && highlightedCard == constants::HIGHLIGHT_TOKENED_P1))
+                || (tokenedP1 && highlightedCard == constants::HIGHLIGHT_TOKENED_P2 && !controller.inFirstSequence(constants::P1, x, y))
+                || (tokenedP2 && highlightedCard == constants::HIGHLIGHT_TOKENED_P1 && !controller.inFirstSequence(constants::P2, x, y)))
                 )
             {
                 // Highlight the card
@@ -408,15 +417,19 @@ void GameView::drawBoard(RenderWindow& window)
     if (tempTokenPos != -1)
         drawToken(window, controller.getPlayerIndex(), tempTokenPos);
 
-    Sprite topDraw(cardBack);
+    // Only draw discard and draw if game is still going on
+    if (currentlyAnimating || controller.gameIsWon() == -1)
+    {
+        Sprite topDraw(cardBack);
 
-    topDraw.setPosition((Vector2f)getDrawPosition());
+        topDraw.setPosition((Vector2f)getDrawPosition());
 
-    window.draw(topDraw);
+        window.draw(topDraw);
 
-    topDiscard.setPosition((Vector2f)getDiscardPosition());
+        topDiscard.setPosition((Vector2f)getDiscardPosition());
 
-    window.draw(topDiscard);
+        window.draw(topDiscard);
+    }
 }
 
 void GameView::drawHands(RenderWindow& window)
@@ -476,7 +489,16 @@ void GameView::drawInformation(RenderWindow& window)
     window.draw(tip1);
     window.draw(tip2);
 
-    if (!currentlyAnimating)
+    if (!currentlyAnimating && controller.gameIsWon() != -1)
+    {
+        Text won{ controller.gameIsWon() == 0 ? "YOU WIN!" : "AI WINS!", font };
+        won.setFillColor(Color::Black);
+        won.setCharacterSize(constants::WIN_TEXT_SIZE);
+        won.setPosition(constants::WIN_OFFSET_X - won.getGlobalBounds().width / 2.f, constants::WIN_OFFSET_Y);
+
+        window.draw(won);
+    }
+    else if (!currentlyAnimating)
     {
         Text turn{ controller.getPlayerIndex() == 0 ? "Your Turn" : "AI Turn", font };
         turn.setFillColor(Color::Black);
